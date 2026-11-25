@@ -1,0 +1,14 @@
+[
+  {"title": "Junior Python Developer", "company_name": "TechNova", "url": "https://example.com/jobs/1",
+   "description": "We need a junior developer with Python, SQL and Git. Basic Flask knowledge is a plus."},
+  {"title": "Web Developer", "company_name": "PixelWorks", "url": "https://example.com/jobs/2",
+   "description": "Build websites using HTML, CSS, JavaScript and React. Git required."},
+  {"title": "Shopify Store Manager", "company_name": "CraftHub", "url": "https://example.com/jobs/3",
+   "description": "Manage our Shopify store, product listings, SEO and marketing. Photoshop or Canva for product images."},
+  {"title": "Graphic Designer", "company_name": "BrandBox", "url": "https://example.com/jobs/4",
+   "description": "Design social media posts and logos using Photoshop and Canva. Good communication needed."},
+  {"title": "Data Analyst Intern", "company_name": "InsightLab", "url": "https://example.com/jobs/5",
+   "description": "Data analysis using Excel, SQL and Python. Machine learning knowledge is a bonus."},
+  {"title": "Backend Developer", "company_name": "CloudSoft", "url": "https://example.com/jobs/6",
+   "description": "Java, Django, MySQL and Git experience required."}
+]
