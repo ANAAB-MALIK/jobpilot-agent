@@ -1,14 +1,16 @@
 [
-  {"title": "Junior Python Developer", "company_name": "TechNova", "url": "https://example.com/jobs/1",
+  {"title": "Junior Graphic Designer (Intern)", "company_name": "BrandBox", "url": "https://example.com/jobs/1",
+   "description": "Design social media posts, logos and print material using Photoshop, Illustrator and Canva. Branding knowledge is a plus. Good communication needed."},
+  {"title": "E-commerce Assistant", "company_name": "CraftHub", "url": "https://example.com/jobs/2",
+   "description": "Manage our Shopify store, product listings and social media. Photoshop or Canva for product images."},
+  {"title": "Database Intern", "company_name": "InsightLab", "url": "https://example.com/jobs/3",
+   "description": "Work with SQL and MySQL databases, write queries and reports. Python basics are a bonus."},
+  {"title": "Social Media & Content Intern", "company_name": "PixelWorks", "url": "https://example.com/jobs/4",
+   "description": "Create content with Canva, manage social media pages and help with SEO and marketing."},
+  {"title": "Junior Python Developer", "company_name": "TechNova", "url": "https://example.com/jobs/5",
    "description": "We need a junior developer with Python, SQL and Git. Basic Flask knowledge is a plus."},
-  {"title": "Web Developer", "company_name": "PixelWorks", "url": "https://example.com/jobs/2",
+  {"title": "Web Developer", "company_name": "WebCo", "url": "https://example.com/jobs/6",
    "description": "Build websites using HTML, CSS, JavaScript and React. Git required."},
-  {"title": "Shopify Store Manager", "company_name": "CraftHub", "url": "https://example.com/jobs/3",
-   "description": "Manage our Shopify store, product listings, SEO and marketing. Photoshop or Canva for product images."},
-  {"title": "Graphic Designer", "company_name": "BrandBox", "url": "https://example.com/jobs/4",
-   "description": "Design social media posts and logos using Photoshop and Canva. Good communication needed."},
-  {"title": "Data Analyst Intern", "company_name": "InsightLab", "url": "https://example.com/jobs/5",
-   "description": "Data analysis using Excel, SQL and Python. Machine learning knowledge is a bonus."},
-  {"title": "Backend Developer", "company_name": "CloudSoft", "url": "https://example.com/jobs/6",
-   "description": "Java, Django, MySQL and Git experience required."}
+  {"title": "Senior Full Stack Developer", "company_name": "CloudSoft", "url": "https://example.com/jobs/7",
+   "description": "5+ years of experience with Python, Django, MySQL, React, HTML and CSS required."}
 ]

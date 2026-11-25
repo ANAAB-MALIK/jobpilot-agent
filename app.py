@@ -6,6 +6,8 @@ Needs: job_agent.py and jobs_sample.json in the same folder.
 
 import html
 import io
+import re
+import urllib.parse
 
 import streamlit as st
 
@@ -13,9 +15,11 @@ from job_agent import (
     SKILLS,
     SOFT_SKILLS,
     clean_html,
+    display_name,
     fetch_arbeitnow_jobs,
     fetch_live_jobs,
     find_skills,
+    guess_name,
     load_sample_jobs,
     score_job,
     write_cover_letter,
@@ -96,7 +100,7 @@ def get_jobs_with_source(keywords):
                 jobs.append(job)
 
     try:
-        for keyword in keywords[:5]:
+        for keyword in keywords[:6]:
             add(fetch_live_jobs(keyword))
     except Exception as error:
         errors.append(f"Remotive: {error}")
@@ -111,22 +115,52 @@ def get_jobs_with_source(keywords):
     return load_sample_jobs(), False, errors
 
 
-def rank_jobs(jobs, skills, top=5):
-    """Score every job; keep only jobs that match at least one technical skill."""
+SENIOR_WORDS = ("senior", "sr.", "sr ", "lead", "principal", "staff", "head of", "director",
+                "architect", "vp ", "chief", "engineering manager")
+JUNIOR_WORDS = ("junior", "intern", "entry", "trainee", "graduate", "fresher", "associate")
+YEARS_PATTERN = re.compile(r"(?<![\d\-\u2013])\b([3-9]|1\d)\+?\s*years?", re.I)   # "3+ years", "5 years"
+
+ROLE_MAP = [
+    ({"graphic design", "photoshop", "illustrator", "canva", "branding", "print design"}, "Graphic Designer Intern"),
+    ({"shopify", "e-commerce"}, "E-commerce Assistant"),
+    ({"sql", "mysql", "database"}, "Junior SQL Developer"),
+    ({"python"}, "Python Intern"),
+    ({"social media", "marketing", "seo"}, "Social Media Intern"),
+    ({"html", "css", "javascript", "react"}, "Junior Web Developer"),
+]
+
+
+def suggest_roles(skills):
+    return [role for group, role in ROLE_MAP if group & set(skills)]
+
+
+def too_senior(job):
+    title = job.get("title", "").lower() + " "
+    text = title + clean_html(job.get("description", ""))
+    return any(w in title for w in SENIOR_WORDS) or bool(YEARS_PATTERN.search(text))
+
+
+def rank_jobs(jobs, skills, top=5, fresher=True):
+    """Score every job; keep only jobs that match at least one technical skill.
+    fresher=True hides senior roles / jobs asking for 3+ years and boosts junior/intern roles."""
     ranked = []
     for job in jobs:
+        if fresher and too_senior(job):
+            continue
         score, matched = score_job(job, skills)
         if score == 0:
             continue
+        if fresher and any(w in job.get("title", "").lower() for w in JUNIOR_WORDS):
+            score = min(100, score + 10)
         job_text = job.get("title", "") + " " + clean_html(job.get("description", ""))
-        missing = [s for s in find_skills(job_text) if s not in matched and s not in SOFT_SKILLS]
+        missing = [x for x in find_skills(job_text) if x not in matched and x not in SOFT_SKILLS]
         ranked.append((score, matched, missing, job))
     ranked.sort(key=lambda item: item[0], reverse=True)
     return ranked[:top]
 
 
 def chips(items, css_class=""):
-    return "".join(f'<span class="chip {css_class}">{html.escape(i)}</span>' for i in items) or "-"
+    return "".join(f'<span class="chip {css_class}">{html.escape(display_name(i))}</span>' for i in items) or "-"
 
 
 # ---------------------------------------------------------------
@@ -136,11 +170,19 @@ cv_file = st.file_uploader("Upload your CV (PDF, Word or TXT)", type=["pdf", "do
 
 if cv_file:
     cv_text = read_uploaded_cv(cv_file)
-    lines = [l.strip() for l in cv_text.splitlines() if l.strip()]
-    name = st.text_input("Your name (used in the cover letter)", value=lines[0] if lines else "")
+    name = st.text_input("Your name (used in the cover letter)", value=guess_name(cv_text))
+    about = st.text_input("One line about you for the cover letter (optional)",
+                          placeholder="e.g. I am a 6th semester BS Computer Science student and founder of a small craft brand.")
 
-    detected = find_skills(cv_text)
-    skills = st.multiselect("Skills found in your CV (you can edit them)", options=SKILLS, default=detected)
+    detected = sorted(find_skills(cv_text), key=lambda x: cv_text.lower().find(x))
+    skills = st.multiselect("Skills found in your CV (you can edit them)", options=SKILLS, default=detected,
+                            format_func=display_name)
+
+    level = st.radio(
+        "Experience level",
+        ["Student / Fresher (hide senior roles)", "Any level"],
+        horizontal=True,
+    )
 
     # -----------------------------------------------------------
     # Step 2: run the agent
@@ -155,7 +197,7 @@ if cv_file:
                 search_skills = [x for x in skills if x not in SOFT_SKILLS] or skills
                 jobs, is_live, errors = get_jobs_with_source(search_skills)
                 st.write(f"🧠 **Decide:** scoring {len(jobs)} jobs against your skills...")
-                ranked = rank_jobs(jobs, skills)
+                ranked = rank_jobs(jobs, skills, fresher=level.startswith("Student"))
                 st.write("✍️ **Act:** drafting cover letters for the best matches.")
                 status.update(label="Agent finished", state="complete", expanded=False)
 
@@ -183,7 +225,7 @@ if "results" in st.session_state:
     if res["is_live"] and res.get("errors"):
         st.caption("Note: one job source was unavailable (" + "; ".join(res["errors"])[:150] + ")")
     if not res["ranked"]:
-        st.info("No jobs matched your technical skills right now. Try adding more skills above.")
+        st.info("No suitable jobs found right now. Try adding more skills, or switch Experience level to 'Any level'.")
 
     for i, (score, matched, missing, job) in enumerate(res["ranked"], start=1):
         color = "#16a34a" if score >= 70 else "#d97706" if score >= 50 else "#6b7280"
@@ -193,17 +235,26 @@ if "results" in st.session_state:
                 f'<p class="jobtitle">#{i} · {html.escape(job.get("title", ""))}</p>'
                 f'<p class="company">{html.escape(job.get("company_name", "Unknown company"))}</p>'
                 f'<p class="label">Your matching skills</p>{chips(matched)}'
-                f'<p class="label">Other skills this job mentions</p>{chips(missing, "missing")}',
+                f'<p class="label">Skills this job wants that you don't have yet</p>{chips(missing, "missing")}',
                 unsafe_allow_html=True,
             )
             st.progress(min(score, 100) / 100)
 
             with st.expander("Cover letter draft (editable)"):
                 letter = st.text_area(
-                    "Draft", write_cover_letter(res["name"], job, matched), height=260, key=f"letter{i}"
+                    "Draft", write_cover_letter(res["name"], job, matched, res.get("about", "")), height=300, key=f"letter{i}"
                 )
                 st.download_button("⬇️ Download cover letter", letter, f"cover_letter_{i}.txt", key=f"dl{i}")
 
             st.link_button("✅ Approve & open application page", job.get("url", "#"))
+
+    if res.get("roles"):
+        st.subheader("Search more on LinkedIn / Indeed")
+        st.write("Roles that fit your CV. These open the job sites with the search already filled in:")
+        for role in res["roles"]:
+            q = urllib.parse.quote(role)
+            c1, c2 = st.columns(2)
+            c1.link_button(f"LinkedIn: {role}", f"https://www.linkedin.com/jobs/search/?keywords={q}&location=Pakistan")
+            c2.link_button(f"Indeed Pakistan: {role}", f"https://pk.indeed.com/jobs?q={q}")
 
     st.caption("Agent type: goal-based · Percepts: CV + live job listings · Actions: rank, draft, ask approval")
