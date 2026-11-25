@@ -235,7 +235,7 @@ if "results" in st.session_state:
                 f'<p class="jobtitle">#{i} · {html.escape(job.get("title", ""))}</p>'
                 f'<p class="company">{html.escape(job.get("company_name", "Unknown company"))}</p>'
                 f'<p class="label">Your matching skills</p>{chips(matched)}'
-                f'<p class="label">Skills this job wants that you don't have yet</p>{chips(missing, "missing")}',
+                f'<p class="label">Skills this job wants that you do not have yet</p>{chips(missing, "missing")}',
                 unsafe_allow_html=True,
             )
             st.progress(min(score, 100) / 100)
